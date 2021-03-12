@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -74,7 +74,6 @@
 				2BDBBDBAED84BBA205DAF695 /* Pods-webrtc-callkit.debug.xcconfig */,
 				4E0B0F8519983AC6B8B4FD85 /* Pods-webrtc-callkit.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
