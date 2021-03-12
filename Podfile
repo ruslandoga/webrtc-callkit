@@ -8,4 +8,5 @@ target 'webrtc-callkit' do
   pod 'SwiftPhoenixClient'
   pod 'GoogleWebRTC'
   pod 'Anchorage'
+  pod 'PromisesSwift'
 end

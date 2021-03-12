@@ -1,4 +1,5 @@
 import UIKit
+import SwiftPhoenixClient
 
 @UIApplicationMain
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,10 +15,24 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.makeKeyAndVisible()
         window?.rootViewController = rootController
-        
+
         let callVC = CallVC()
+        callVC.service = makeCallService()
         rootController.setViewControllers([callVC], animated: false)
+        rootController.isNavigationBarHidden = true
         
         return true
+    }
+    
+    private func makeCallService() -> CallService {
+        let me = UUID(uuidString: "00000177-8336-5e0e-0242-ac1100030000")!
+        
+        let socket = Socket("http://192.168.1.51:4000/api/socket",
+                            params: ["token": "qLgIwVlnThoVUUPrOnDVX4Qa7bf9UHckAUXLRcW0j8o"])
+        
+        socket.logger = { msg in print("LOG:", msg) }
+        socket.connect()
+
+        return CallService(socket: socket, me: me)
     }
 }
