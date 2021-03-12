@@ -1,0 +1,28 @@
+PODS:
+  - Anchorage (4.5.0)
+  - GoogleWebRTC (1.1.31999)
+  - Starscream (3.1.1)
+  - SwiftPhoenixClient (1.3.0):
+    - Starscream (~> 3.1.0)
+
+DEPENDENCIES:
+  - Anchorage
+  - GoogleWebRTC
+  - SwiftPhoenixClient
+
+SPEC REPOS:
+  trunk:
+    - Anchorage
+    - GoogleWebRTC
+    - Starscream
+    - SwiftPhoenixClient
+
+SPEC CHECKSUMS:
+  Anchorage: 1961bc81c84aeed54ad7ffc697c50cd9de748ba6
+  GoogleWebRTC: b39a78c4f5cc6b0323415b9233db03a2faa7b0f0
+  Starscream: 4bb2f9942274833f7b4d296a55504dcfc7edb7b0
+  SwiftPhoenixClient: 50cadfc54ce671fab33a99869c0152172c1554ef
+
+PODFILE CHECKSUM: e3c70dd8d91915c1f52545890fc342be92c0ad06
+
+COCOAPODS: 1.10.1
