@@ -101,12 +101,22 @@ final class CallService: NSObject {
     
     private func interpret(_ command: VoiceCallMachine.Output) {
         switch command {
-//        case let .reportIncomingCall(mate: mate): ()
-//        case let .reportConnected(mate: mate):
-//            callProvider.reportOutgoingCall(with: mate, connectedAt: nil)
-//
-//        case let .reportHangUp(mate: mate): ()
-////            request(transaction: endCallTx(uuid: mate), in: callController)
+        case let .reportOutgoingCall(mate: mate):
+            callProvider.reportOutgoingCall(with: mate, startedConnectingAt: nil)
+            configureAudioSession()
+        
+        case let .reportIncomingCall(mate: mate):
+            let update = CXCallUpdate()
+            update.hasVideo = false
+            update.remoteHandle = CXHandle(type: .generic, value: mate.lowerString)
+            callProvider.reportNewIncomingCall(with: mate, update: update) { error in
+                if let error = error {
+                    print("error reporting new call", error)
+                }
+            }
+        
+        case let .reportEndCall(mate: mate):
+            request(transaction: endCallTx(uuid: mate), in: callController)
         
         case let .pushCall(mate: mate):
             channel.push("call", payload: ["mate": mate.lowerString])
@@ -181,9 +191,7 @@ extension CallService: CXProviderDelegate {
         voiceCallMachine
             .process(input: .call(mate: mate))
             .forEach(interpret(_:))
-        
-        configureAudioSession()
-        provider.reportOutgoingCall(with: mate, startedConnectingAt: nil)
+
         action.fulfill()
     }
     
@@ -200,6 +208,8 @@ extension CallService: CXProviderDelegate {
     
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         let mate = action.callUUID
+        
+        // TODO how many times called?
         
         voiceCallMachine
             .process(input: .hangUp(mate: mate))
@@ -228,6 +238,7 @@ extension CallService: WebRTCClientDelegate {
         // TODO possibly hang up on state change = lost
         print("[dev] didChangeConnectionState \(state)")
         switch state {
+        // TODO push these states to voice call machine
         case .connected: callProvider.reportOutgoingCall(with: voiceCallMachine.mate!, startedConnectingAt: nil)
         default: ()
         }

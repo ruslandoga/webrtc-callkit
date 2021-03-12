@@ -39,8 +39,12 @@ struct VoiceCallMachine {
         /// Command to push webrtc answer to mate via backend
         case pushAnswer(mate: UUID)
         
-//        case reportIncomingCall
-//        case report 
+        /// Command to report incoming call to CallKit
+        case reportIncomingCall(mate: UUID)
+        /// Command to report outgoing call to CallKit
+        case reportOutgoingCall(mate: UUID)
+        /// Command to report end of the call to CallKit
+        case reportEndCall(mate: UUID)
     }
     
     var state: State = .none
@@ -79,7 +83,7 @@ extension VoiceCallMachine {
         // me not doing much, and then me called mate
         if case .none = state {
             state = .calling(mate: mate)
-            return [.pushCall(mate: mate)]
+            return [.reportOutgoingCall(mate: mate), .pushCall(mate: mate)]
         }
 
         return []
@@ -98,7 +102,7 @@ extension VoiceCallMachine {
         // me not doing much, mate called me
         case .none:
             state = .called(mate: mate)
-            return []
+            return [.reportIncomingCall(mate: mate)]
         
         default:
             return []
@@ -145,16 +149,16 @@ extension VoiceCallMachine {
         // mate called and then either me hanged up on mate or mate changed mind and hang up
         case let .called(mate: called) where called == mate:
             state = .none
-            return [.pushHangUp(mate: mate)]
+            return [.pushHangUp(mate: mate), .reportEndCall(mate: mate)]
         // me was calling mate and then either me changed mind and hang up or mate hang up
         case let .calling(mate: calling) where calling == mate:
             state = .none
-            return [.pushHangUp(mate: mate)]
+            return [.pushHangUp(mate: mate), .reportEndCall(mate: mate)]
         // me and mate were having a convo and then someone hang up
         case let .pickedUp(mate: pickedUp) where pickedUp == mate:
             // TODO who hang up? if it was mate, no need to push
             state = .none
-            return [.pushHangUp(mate: mate)]
+            return [.pushHangUp(mate: mate), .reportEndCall(mate: mate)]
         
         default:
             return []
@@ -162,19 +166,27 @@ extension VoiceCallMachine {
     }
     
     private mutating func processPresenceChange(matesOnline: [UUID]) -> [Output] {
+        // TODO
         switch state {
         // mate called me and then went offline
-        case let .called(mate: mate) where !matesOnline.contains(mate): state = .none
+        case let .called(mate: mate) where !matesOnline.contains(mate):
+            state = .none
+            return [.reportEndCall(mate: mate)]
+        
         // me called mate and mate went offline
-        case let .calling(mate: mate) where !matesOnline.contains(mate): state = .none
+        case let .calling(mate: mate) where !matesOnline.contains(mate):
+            state = .none
+            return [.reportEndCall(mate: mate)]
+        
         // me and mate are ready for call and then mate went offline
         // TODO not sure about this, what if webrtc connection is still alive?
-        case let .pickedUp(mate: mate) where !matesOnline.contains(mate): state = .none
+        case let .pickedUp(mate: mate) where !matesOnline.contains(mate):
+            state = .none
+            return []
+            // TODO need to report end call?
         
-        default: ()
+        default: return []
         }
-        
-        return []
     }
 }
 
