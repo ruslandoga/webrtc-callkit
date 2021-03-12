@@ -18,7 +18,8 @@ final class WebRTCClient: NSObject {
     }()
     
     weak var delegate: WebRTCClientDelegate?
-    private let peerConnection: RTCPeerConnection
+    private let config: RTCConfiguration
+    private var peerConnection: RTCPeerConnection!
     let rtcAudioSession = RTCAudioSession.sharedInstance()
     private let audioQueue = DispatchQueue(label: "audio")
     private let mediaConstrains = [kRTCMediaConstraintsOfferToReceiveAudio: kRTCMediaConstraintsValueTrue]
@@ -29,7 +30,7 @@ final class WebRTCClient: NSObject {
     }
     
     required init(iceServers: [String]) {
-        let config = RTCConfiguration()
+        config = RTCConfiguration()
         config.iceServers = [RTCIceServer(urlStrings: iceServers)]
         
         // Unified plan is more superior than planB
@@ -37,15 +38,21 @@ final class WebRTCClient: NSObject {
         
         // gatherContinually will let WebRTC to listen to any network changes and send any new candidates to the other client
         config.continualGatheringPolicy = .gatherContinually
-        
+
+        super.init()
+        peerConnection = setupPeerConnection()
+        peerConnection.delegate = self
+    }
+    
+    private func setupPeerConnection() -> RTCPeerConnection {
         let constraints = RTCMediaConstraints(mandatoryConstraints: nil,
                                               optionalConstraints: ["DtlsSrtpKeyAgreement":kRTCMediaConstraintsValueTrue])
-        peerConnection = WebRTCClient.factory.peerConnection(with: config, constraints: constraints, delegate: nil)
         
-        super.init()
-        createMediaSenders()
+        let peerConnection = WebRTCClient.factory.peerConnection(with: config, constraints: constraints, delegate: nil)
+        createMediaSenders(for: peerConnection)
         configureAudioSession()
-        peerConnection.delegate = self
+        
+        return peerConnection
     }
     
     // MARK: Signaling
@@ -90,6 +97,11 @@ final class WebRTCClient: NSObject {
         peerConnection.close()
     }
     
+    func resetPeerConnected() {
+        peerConnection = setupPeerConnection()
+        peerConnection.delegate = self
+    }
+    
     func audioSessionDidActivate(_ session: AVAudioSession) {
         rtcAudioSession.audioSessionDidActivate(session)
         rtcAudioSession.isAudioEnabled = true
@@ -117,7 +129,7 @@ final class WebRTCClient: NSObject {
         rtcAudioSession.unlockForConfiguration()
     }
     
-    private func createMediaSenders() {
+    private func createMediaSenders(for peerConnection: RTCPeerConnection) {
         let streamId = "stream"
         
         // Audio

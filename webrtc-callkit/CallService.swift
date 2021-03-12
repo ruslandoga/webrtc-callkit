@@ -126,6 +126,8 @@ final class CallService: NSObject {
             }
         
         case let .reportEndCall(mate: mate):
+            webrtcClient.close()
+            webrtcClient.resetPeerConnected()
             request(transaction: endCallTx(uuid: mate), in: callController)
         
         case let .pushCall(mate: mate):
@@ -140,11 +142,7 @@ final class CallService: NSObject {
             
         case let .pushHangUp(mate: mate):
             channel.push("hang-up", payload: ["mate": mate.lowerString])
-                .receive("ok") { _ in
-                    print("[dev] pushed hang up \(mate)")
-                    self.webrtcClient.close()
-//                    self.onRestart?()
-                }
+                .receive("ok") { _ in print("[dev] pushed hang up \(mate)") }
                 .receive("error") { _ in print("[dev] failed to push hang up \(mate)") }
             
         case let .pushOffer(mate: mate):
