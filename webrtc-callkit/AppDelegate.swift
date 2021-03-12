@@ -31,8 +31,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                             params: ["token": "qLgIwVlnThoVUUPrOnDVX4Qa7bf9UHckAUXLRcW0j8o"])
         
         socket.logger = { msg in print("LOG:", msg) }
-        socket.connect()
-
+        socket.onOpen { print("socket connected") }
+        socket.onClose { print("socket disconnected") }
+        socket.onError { error in print("socket error", error) }
+        
         return CallService(socket: socket, me: me)
     }
 }

@@ -6,9 +6,7 @@ final class CallVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        service.start()
-        
+
         view.backgroundColor = .white
         let callButton = UIButton(type: .system)
         callButton.addTarget(self, action: #selector(callTapped), for: .touchUpInside)
@@ -21,6 +19,11 @@ final class CallVC: UIViewController {
         
         view.addSubview(callButton)
         callButton.centerAnchors == view.centerAnchors
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        service.start()
     }
     
     @objc private func callTapped() {

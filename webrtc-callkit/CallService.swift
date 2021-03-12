@@ -30,6 +30,7 @@ fileprivate func configureAudioSession() {
 }
 
 final class CallService: NSObject {
+    private let socket: Socket
     private let channel: Channel
     private let presence: Presence
     
@@ -41,6 +42,8 @@ final class CallService: NSObject {
     private let callProvider: CXProvider
     
     init(socket: Socket, me: UUID) {
+        print("call service init, \(socket)")
+        self.socket = socket
         channel = socket.channel("matches:\(me.lowerString)")
         presence = Presence(channel: channel)
         
@@ -57,6 +60,7 @@ final class CallService: NSObject {
     }
     
     func start() {
+        print("call service start")
         webrtcClient.delegate = self
         signalClient.delegate = self
         callProvider.setDelegate(self, queue: nil)
@@ -90,7 +94,12 @@ final class CallService: NSObject {
                 .forEach(interpret)
         }
         
+        socket.connect()
+        
         channel.join()
+            .receive("ok") { _ in print("joined") }
+            .receive("error") { _ in print("error join") }
+            .receive("timeout") { _ in print("join timeout") }
     }
 
     func call() {
@@ -102,6 +111,7 @@ final class CallService: NSObject {
     private func interpret(_ command: VoiceCallMachine.Output) {
         switch command {
         case let .reportOutgoingCall(mate: mate):
+//            subscription?(.outgoingCall(mate: mate))
             callProvider.reportOutgoingCall(with: mate, startedConnectingAt: nil)
             configureAudioSession()
         
