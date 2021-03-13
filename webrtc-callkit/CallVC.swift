@@ -6,9 +6,27 @@ final class CallVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let callButton = UIButton(type: .system)
+        
+        service.subscribe { [unowned callButton] event in
+            switch event {
+            case let .callStateChange(state):
+                switch state {
+                case .none:
+                    callButton.setTitle("call", for: .normal)
+                case let .calling(mate: _):
+                    callButton.setTitle("calling", for: .normal)
+                case let .called(mate: _):
+                    callButton.setTitle("called", for: .normal)
+                case let .pickedUp(mate: _):
+                    callButton.setTitle("picked", for: .normal)
+                }
+            }
+        }
 
         view.backgroundColor = .white
-        let callButton = UIButton(type: .system)
+        
         callButton.addTarget(self, action: #selector(callTapped), for: .touchUpInside)
         callButton.setTitle("call", for: .normal)
         callButton.backgroundColor = .green
@@ -25,7 +43,7 @@ final class CallVC: UIViewController {
         super.viewWillAppear(animated)
         service.start()
     }
-    
+
     @objc private func callTapped() {
         service.call()
     }

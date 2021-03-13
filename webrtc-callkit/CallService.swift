@@ -34,12 +34,25 @@ final class CallService: NSObject {
     private let channel: Channel
     private let presence: Presence
     
-    private var voiceCallMachine: VoiceCallMachine
+    private var subscription: Subscription?
+    
     private let webrtcClient: WebRTCClient
     private let signalClient: SignalClient
-    
+    private var voiceCallMachine: VoiceCallMachine {
+        didSet {
+            guard oldValue.state != voiceCallMachine.state else { return }
+            subscription?(.callStateChange(voiceCallMachine.state))
+        }
+    }
+
     private let callController = CXCallController()
     private let callProvider: CXProvider
+    
+    enum Event {
+        case callStateChange(VoiceCallMachine.State)
+    }
+    
+    typealias Subscription = (Event) -> ()
     
     init(socket: Socket, me: UUID) {
         print("call service init, \(socket)")
@@ -103,19 +116,28 @@ final class CallService: NSObject {
     }
 
     func call() {
-        let mate = UUID(uuidString: "00000177-6518-778a-b8e8-56408d820000")!
-        let tx = callTx(uuid: mate, handle: "Regina")
-        request(transaction: tx, in: callController)
+        if case let .called(mate: mate) = voiceCallMachine.state {
+            let tx = answerCallTx(uuid: mate)
+            request(transaction: tx, in: callController)
+        } else {
+            let mate = UUID(uuidString: "00000177-6518-778a-b8e8-56408d820000")!
+            let tx = callTx(uuid: mate, handle: "Regina")
+            request(transaction: tx, in: callController)
+        }
+    }
+    
+    func subscribe(with subscription: @escaping Subscription) {
+        self.subscription = subscription
     }
     
     private func interpret(_ command: VoiceCallMachine.Output) {
         switch command {
         case let .reportOutgoingCall(mate: mate):
-//            subscription?(.outgoingCall(mate: mate))
             callProvider.reportOutgoingCall(with: mate, startedConnectingAt: nil)
             configureAudioSession()
         
         case let .reportIncomingCall(mate: mate):
+            // TODO when does it show the default view and when it doesn't?
             let update = CXCallUpdate()
             update.hasVideo = false
             update.remoteHandle = CXHandle(type: .generic, value: mate.lowerString)
@@ -162,6 +184,10 @@ final class CallService: NSObject {
         let startCallAction = CXStartCallAction(call: uuid, handle: handle)
         startCallAction.isVideo = false
         return CXTransaction(action: startCallAction)
+    }
+    
+    private func answerCallTx(uuid: UUID) -> CXTransaction {
+        return CXTransaction(action: CXAnswerCallAction(call: uuid))
     }
     
     private func endCallTx(uuid: UUID) -> CXTransaction {

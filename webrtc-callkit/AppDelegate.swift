@@ -36,7 +36,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     private func makeCallService() -> CallService {
         let me = UUID(uuidString: "00000177-8336-5e0e-0242-ac1100030000")!
         
-        socket = Socket("http://192.168.1.51:4000/api/socket",
+        socket = Socket("http://192.168.1.131:4000/api/socket",
                             params: ["token": "qLgIwVlnThoVUUPrOnDVX4Qa7bf9UHckAUXLRcW0j8o"])
         
         socket?.logger = { msg in print("LOG:", msg) }
